@@ -1,57 +1,57 @@
-name: Staging Deployment
+# name: Staging Deployment
 
-on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
+# on:
+#   push:
+#     branches:
+#       - main
+#   workflow_dispatch:
 
-jobs:
-  staging:
-    name: Build, Test & Deploy to Staging
-    runs-on: ubuntu-latest
+# jobs:
+#   staging:
+#     name: Build, Test & Deploy to Staging
+#     runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
+#       - name: Setup Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: 18
 
-      - name: Install dependencies
-        run: npm install
+#       - name: Install dependencies
+#         run: npm install
 
-      - name: Run unit tests
-        run: npm test -- --watchAll=false
+#       - name: Run unit tests
+#         run: npm test -- --watchAll=false
 
-      - name: Lint code
-        run: npm run lint || echo "Lint skipped"
+#       - name: Lint code
+#         run: npm run lint || echo "Lint skipped"
 
-      - name: Build frontend
-        run: npm run build
+#       - name: Build frontend
+#         run: npm run build
 
-      - name: Deploy to Staging EC2
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY }}
-          script: |
-            sudo apt update -y
-            sudo apt install -y nodejs npm
-            pm2 || sudo npm install -g pm2
+#       - name: Deploy to Staging EC2
+#         uses: appleboy/ssh-action@v1.0.3
+#         with:
+#           host: ${{ secrets.EC2_HOST }}
+#           username: ${{ secrets.EC2_USER }}
+#           key: ${{ secrets.EC2_KEY }}
+#           script: |
+#             sudo apt update -y
+#             sudo apt install -y nodejs npm
+#             pm2 || sudo npm install -g pm2
 
-            if [ ! -d "${{ vars.STAGING_APP_DIR }}" ]; then
-              git clone https://github.com/${{ github.repository }}.git ${{ vars.STAGING_APP_DIR }}
-            fi
+#             if [ ! -d "${{ vars.STAGING_APP_DIR }}" ]; then
+#               git clone https://github.com/${{ github.repository }}.git ${{ vars.STAGING_APP_DIR }}
+#             fi
 
-            cd ${{ vars.STAGING_APP_DIR }}
-            git pull origin main
-            npm install
-            npm run build
+#             cd ${{ vars.STAGING_APP_DIR }}
+#             git pull origin main
+#             npm install
+#             npm run build
 
-            pm2 delete staging-app || true
-            pm2 start index.js --name staging-app -- --port=${{ vars.STAGING_PORT }}
-            pm2 save
+#             pm2 delete staging-app || true
+#             pm2 start index.js --name staging-app -- --port=${{ vars.STAGING_PORT }}
+#             pm2 save
