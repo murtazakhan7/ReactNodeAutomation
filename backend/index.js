@@ -15,12 +15,7 @@ app.use(logger('dev'));
 // Sets up the response object in routes to contain a body property with an object of what is parsed from a JSON body request payload
 app.use(express.json())
 
-// Serving up of React app HTML with its static content - images, CSS files, and JavaScript files
-app.get('/', function (req, res) {
-  res.sendFile(path.join(__dirname, 'build', 'index.html'));
-});
-app.use(express.static(path.join(__dirname, 'build')));
-
+// (Static build serving removed—this backend is API only in docker-compose)
 // Rest API routes
 app.use('/api/carts', carts);
 
