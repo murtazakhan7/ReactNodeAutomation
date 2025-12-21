@@ -17,7 +17,7 @@ jobs:
 
       # Frontend Build and Test
       - name: Setup Node.js for Frontend
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v4 
         with:
           node-version: 18
 
