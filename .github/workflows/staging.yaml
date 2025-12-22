@@ -56,7 +56,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION2 }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
       # Login to Amazon ECR
       - name: Login to Amazon ECR
@@ -171,7 +171,7 @@ jobs:
           password: ${{ secrets.EMAIL_PASSWORD }}
           subject: " Staging Deployment Successful (Docker) - Merged to Main"
           to: ${{ secrets.COLLABORATOR_EMAIL }},${{ secrets.INSTRUCTOR_EMAIL }}
-          from: DevOps CI/CD Pipeline
+          from: DevOps CI/CD Pipeline <${{ secrets.EMAIL_USERNAME }}>
           body: |
             Hello Team,
 
