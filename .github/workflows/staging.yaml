@@ -63,13 +63,15 @@ jobs:
 
       # Login to Amazon ECR
       - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+        run: |
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} \
+          | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
+
 
       # Build and push Docker images to ECR
       - name: Build and Push Frontend Image to ECR
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
           ECR_REPOSITORY_FRONTEND: ${{ secrets.ECR_REPOSITORY_FRONTEND }}
           IMAGE_TAG: staging-${{ github.sha }}
         run: |
@@ -78,16 +80,17 @@ jobs:
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:staging-latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:staging-latest
 
+
       - name: Build and Push Backend Image to ECR
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REGISTRY: 381491901648.dkr.ecr.eu-north-1.amazonaws.com
           ECR_REPOSITORY_BACKEND: ${{ secrets.ECR_REPOSITORY_BACKEND }}
-          IMAGE_TAG: staging-${{ github.sha }}
+          IMAGE_TAG: testing-${{ github.sha }}
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG ./backend
           docker push $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG
-          docker tag $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:staging-latest
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:staging-latest
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:testing-latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:testing-latest
 
       # Deploy to Staging EC2 using Docker
       - name: Deploy to Staging EC2 with Docker
