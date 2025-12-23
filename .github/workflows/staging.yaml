@@ -62,17 +62,14 @@ jobs:
 
 
       # Login to Amazon ECR
-      - name: Login to Friend ECR
-        run: |
-             aws ecr get-login-password --region eu-north-1 \
-             | docker login --username AWS --password-stdin \
-              381491901648.dkr.ecr.eu-north-1.amazonaws.com
-
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
       # Build and push Docker images to ECR
       - name: Build and Push Frontend Image to ECR
         env:
-          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY_FRONTEND: ${{ secrets.ECR_REPOSITORY_FRONTEND }}
           IMAGE_TAG: staging-${{ github.sha }}
         run: |
@@ -80,19 +77,16 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:$IMAGE_TAG
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:staging-latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:staging-latest
-
-
       - name: Build and Push Backend Image to ECR
         env:
-          ECR_REGISTRY: 381491901648.dkr.ecr.eu-north-1.amazonaws.com
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY_BACKEND: ${{ secrets.ECR_REPOSITORY_BACKEND }}
-          IMAGE_TAG: testing-${{ github.sha }}
+          IMAGE_TAG: staging-${{ github.sha }}
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG ./backend
           docker push $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG
-          docker tag $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:testing-latest
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:testing-latest
-
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:staging-latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:staging-latest
       # Deploy to Staging EC2 using Docker
       - name: Deploy to Staging EC2 with Docker
         uses: appleboy/ssh-action@v1.0.3
@@ -141,7 +135,6 @@ jobs:
                 ports:
                   - "${{ secrets.STAGING_PORT }}:3000"
                 restart: always
-
               frontend:
                 image: ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY_FRONTEND }}:staging-latest
                 container_name: staging-frontend
@@ -166,7 +159,6 @@ jobs:
             
             # Show running containers
             sudo docker ps
-
       # Send success notification
       - name: Send Success Email
         if: success()
@@ -181,29 +173,22 @@ jobs:
           from: DevOps CI/CD Pipeline <${{ secrets.EMAIL_USERNAME }}>
           body: |
             Hello Team,
-
             The containerized application has been successfully deployed to the Staging environment.
-
              Deployment Details:
             - Branch: main
             - Commit: ${{ github.sha }}
             - Author: ${{ github.actor }}
             - Commit Message: ${{ github.event.head_commit.message }}
-
              Docker Deployment:
             - Frontend Container: staging-frontend (Port 80)
             - Backend Container: staging-backend (Port ${{ secrets.STAGING_PORT }})
             - Images pushed to AWS ECR
-
              Access the Application:
             http://${{ secrets.STAGING_EC2_HOST }}
-
              Next Steps:
             The application is now ready for client review and final testing before production deployment.
-
             Regards,
             DevOps CI/CD Pipeline
-
       # Send failure notification
       - name: Send Failure Email
         if: failure()
@@ -218,19 +203,14 @@ jobs:
           from: DevOps CI/CD Pipeline
           body: |
             Hello Team,
-
             The Docker deployment to Staging environment has FAILED.
-
              Deployment Details:
             - Branch: main
             - Commit: ${{ github.sha }}
             - Author: ${{ github.actor }}
-
              View Workflow Run:
             ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
              Action Required:
             Please check the logs immediately and fix the issues to ensure the staging environment is operational.
-
             Regards,
             DevOps CI/CD Pipeline
