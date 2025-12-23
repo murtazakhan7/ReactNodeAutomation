@@ -59,14 +59,17 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION2 }}
 
       # Login to Amazon ECR
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+      - name: Login to Friend ECR
+        run: |
+             aws ecr get-login-password --region eu-north-1 \
+             | docker login --username AWS --password-stdin \
+              381491901648.dkr.ecr.eu-north-1.amazonaws.com
+
 
       # Build and push Docker images to ECR
       - name: Build and Push Frontend Image to ECR
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REGISTRY: 381491901648.dkr.ecr.eu-north-1.amazonaws.com
           ECR_REPOSITORY_FRONTEND: ${{ secrets.ECR_REPOSITORY_FRONTEND }}
           IMAGE_TAG: testing-${{ github.sha }}
         run: |
@@ -77,7 +80,7 @@ jobs:
 
       - name: Build and Push Backend Image to ECR
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REGISTRY: 381491901648.dkr.ecr.eu-north-1.amazonaws.com
           ECR_REPOSITORY_BACKEND: ${{ secrets.ECR_REPOSITORY_BACKEND }}
           IMAGE_TAG: testing-${{ github.sha }}
         run: |
